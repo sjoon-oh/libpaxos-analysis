@@ -1,10 +1,6 @@
 @startuml
 
-== Initialized ==
-
 ?--> evproposer: evproposer_preexec_once ()
-
-
 
 activate evproposer
 evproposer -> evproposer: proposer_preexecute () \nproposer_prepare ()
@@ -12,7 +8,7 @@ evproposer -> evproposer: proposer_preexecute () \nproposer_prepare ()
 activate evproposer
 ' evproposer -> evproposer: proposer_prepare ()
 
-note left
+rnote over evproposer
     //proposer_prepare//
     ---
     1. Prepares //ballot//
@@ -21,6 +17,11 @@ note left
 end note
 
 evproposer ->(20) evacceptor: peer_send_prepare ()
+
+hnote over evproposer
+    for //preexec_window//
+end note
+
 
 deactivate evproposer
 deactivate evproposer
@@ -39,6 +40,6 @@ evacceptor ->(20) evproposer: paxos_accepted_to_promise () \nsend_paxos_message 
 deactivate evacceptor
 activate evproposer
 
-== Phase 1 ==
+newpage
 
 @enduml
