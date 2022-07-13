@@ -1,0 +1,80 @@
+@startuml
+
+?--> evproposer: evproposer_preexec_once ()
+
+activate evproposer
+evproposer -> evproposer: proposer_preexecute () \nproposer_prepare ()
+
+activate evproposer
+
+rnote over evproposer
+    //proposer_prepare//
+    ---
+    1. Prepares //ballot//.
+    2. Make new //prepare_instance// for.
+        //preexec_window//.
+end note
+
+evproposer -> evacceptor: peer_send_prepare ()
+
+hnote over evproposer
+    for //preexec_window//
+end note
+
+
+deactivate evproposer
+deactivate evproposer
+
+activate evacceptor
+evacceptor -> evacceptor: **evacceptor_handle_prepare ()**\nacceptor_receive_prepare ()
+
+database "evacceptor \nstorage"
+activate evacceptor
+evacceptor -> "evacceptor \nstorage": storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
+"evacceptor \nstorage" --> evacceptor: No error
+deactivate evacceptor
+
+evacceptor -> evproposer: paxos_accepted_to_promise () \nsend_paxos_message ()
+
+deactivate evacceptor
+activate evproposer
+
+evproposer -> evproposer: **evproposer_handle_promise ()** \nproposer_receive_promise ()
+activate evproposer
+
+rnote over evproposer
+    //proposer_receive_promise//
+    ---
+    1. Check if "//ack->ballot > inst->ballot//".
+        If true, then make it //preempt//.
+    2. Wait for all //evacceptor// to respond.
+
+end note
+
+alt #Lightblue preempt case
+    evproposer -> evacceptor: peer_send_prepare ()
+else #Pink no preempt
+    evproposer ->x evacceptor: Nop
+end
+
+evproposer -> evproposer: try_accept () \nproposer_accept ()
+activate evproposer
+
+rnote over evproposer
+    //proposer_accept//
+    ---
+    1. 
+end note
+
+evproposer -> evacceptor: instance_to_accept () \npeer_send_accept ()
+
+evproposer -> evproposer: proposer_preexecute ()
+deactivate evproposer
+
+
+
+
+
+
+
+@enduml
