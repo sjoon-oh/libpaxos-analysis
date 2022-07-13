@@ -1,0 +1,99 @@
+@startuml roles
+
+' online plantuml server : https://www.plantuml.com/plantuml/uml/
+
+struct proposer {
+    {field} id : int
+    {field} acceptors : int
+    {field} values : struct carray*
+    {field} max_trim_iid : uint32_t
+    {field} next_prepare_iid : uint32_t
+    {field} prepare_instances : kh_instance_t
+    {field} accept_instances : kh_instance_t
+}
+
+struct kh_instance_t {
+    {field} n_buckets : uint32_t
+    {field} size : uint32_t
+    {field} n_occupied : uint32_t
+    {field} upper_bound : uint32_t
+    {field} flags : uint32_t*
+    {field} keys : uint32_t*
+    {field} vals : struct instance*
+}
+
+struct instance
+{
+    {field} iid : uint32_t
+    {field} ballot : uint32_t
+    {field} value : paxos_value*
+    {field} promised_value : paxos_value*
+    {field} value_ballot : uint32_t
+    {field} quorum : struct quorum
+    {field} created_at : struct timeval
+}
+
+proposer *-- "prepare_instances, accept_instances" kh_instance_t
+kh_instance_t *-- "vals" instance
+
+' paxos_value
+struct paxos_value {
+    {field} paxos_value_len : int
+    {field} paxos_value_val : char*
+}
+
+instance *-- "value" paxos_value
+
+' struct quorum
+struct quorum {
+    {field} count : count
+    {field} quorum : quorum
+    {field} acceptors : acceptors
+    {field} acceptor_ids : int*
+}
+
+instance *-- "quorum" quorum
+
+' learner
+struct learner {
+    {field} acceptors : int
+    {field} late_start : int
+    {field} current_iid : uint32_t
+    {field} highest_iid_closed: uint32_t
+    {field} instances : kh_instance_t
+}
+
+learner *-- "instances" kh_instance_t
+
+struct acceptor 
+{
+    {field} id : int
+    {field} trim_iid : uint32_t
+    {field} store : struct storage
+}
+
+struct storage {
+    {field} handle : void*
+    {field} api : //Anonymous STRUCT//
+}
+
+acceptor *-- "store" storage
+
+struct "Anonymous STRUCT" {
+    {method} open
+    {method} close
+    {method} tx_begin
+    {method} tx_commit
+    {method} tx_abort
+    {method} get
+    {method} put
+    {method} trim
+    {method} get_trim_instance
+}
+
+storage *-- "api" "Anonymous STRUCT"
+
+
+
+@enduml
+

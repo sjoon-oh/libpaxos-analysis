@@ -1,0 +1,31 @@
+@startuml
+
+?-> evproposer: evproposer_preexec_once ()
+
+activate evproposer
+evproposer -> evproposer: proposer_preexecute ()
+
+note left of evproposer
+    //proposer_prepare//
+    ---
+    1. Prepares //ballot//
+    2. Make new //prepare_instance// for
+       //preexec_window//
+end note
+
+
+
+activate evproposer
+evproposer -> evproposer: proposer_prepare ()
+evproposer ->(15) evacceptor: peer_send_prepare ()
+
+activate evacceptor
+evacceptor -> evacceptor: evacceptor_handle_prepare ()
+
+deactivate evacceptor
+
+'deactivate evproposer
+'deactivate evproposer
+
+
+@enduml

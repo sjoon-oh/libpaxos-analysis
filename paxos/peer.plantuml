@@ -1,0 +1,79 @@
+@startuml peer
+
+' online plantuml server : https://www.plantuml.com/plantuml/uml/
+
+' paxos_message_type
+enum paxos_message_type
+{
+    PAXOS_PREPARE    
+    PAXOS_PROMISE    
+    PAXOS_ACCEPT    
+    PAXOS_ACCEPTED    
+    PAXOS_PREEMPTED    
+    PAXOS_REPEAT    
+    PAXOS_TRIM    
+    PAXOS_ACCEPTOR_STATE    
+    PAXOS_CLIENT_VALUE
+}    
+
+
+' ---- Peer starts from here
+struct peer
+{
+    {field} id : int
+    {field} status : int
+    {field} bev : struct bufferevent*
+    {field} reconnect_ev : struct event*
+    {field} addr : sockaddr_in
+    {field} peers : struct peers*
+}
+
+struct subscription
+{
+    {field} type : paxos_message_type
+    {field} arg : void*
+    ' {method} callback : peer_cb
+    {field} callback : void* (struct peer*, paxos_message*, void*)
+}
+
+subscription *-- "type" paxos_message_type
+
+struct peers
+{
+    {field} peers_count : int
+    {field} clients_count : int
+    {field} peers : struct peer**
+    {field} clients : struct peer**
+    {field} listener : struct evconnlistener*
+    {field} base : struct event_base
+    {field} config : evpaxos_config*
+    {field} subs_count : int
+    {field} subs[32] : struct subscription
+}
+
+peer *-- "peers" peers
+peers *-- "subs" subscription
+peers *-- "peers, clients" peer
+
+struct evpaxos_config
+{
+    {field} proposers_count : int
+    {field} acceptors_count : int
+    {field} proposers[MAX_N_OF_PROPOSERS] : struct address
+    {field} acceptors[MAX_N_OF_PROPOSERS] : struct address
+}
+
+struct address
+{
+    {field} addr : char*
+    {field} port : int
+}
+
+evpaxos_config *-- "proposers, acceptors" address
+peers *-- "config" evpaxos_config
+
+
+
+
+@enduml
+

@@ -1,0 +1,32 @@
+@startuml
+start
+partition "**function** start_acceptor ()" {
+
+    :<color:blue>event_base_new ()>
+
+    partition "**function** evacceptor_init ()" {
+        partition "**function** peers_listen ()" {
+            :<color:blue>evconnlistener_new_bind ()>
+            note
+                Register //evconnlistener//.
+            end note
+            :<color:blue>evconnlistener_set_error_cb ()>
+            note
+                Register //callback//.
+            end note
+        }
+    }
+
+    partition "**function** evacceptor_init_internal ()" {
+        :evtimer_new ()>
+        note
+            New event init.
+        end note
+        :<color:blue>event_add ()>
+    }
+    repeat
+    :<color:blue>event_base_dispatch ()>
+    repeat while (<color:blue>//event_base_loopexit()//) is (No) not (Yes)
+    stop
+}
+@enduml

@@ -1,0 +1,57 @@
+@startuml
+start
+
+partition "**function** evproposer_init ()" {
+
+    :peers_new ()>
+    note
+        Returns new //struct peers// object.
+    end note
+
+
+    partition "**function** peers_connect_to_acceptors () " {
+        
+        repeat
+            partition "**function** peers_connect ()" {
+                partition "**function** make_peer ()" {
+                    :<color:blue>//bufferevent_socket_new ()//>
+                }
+                :<color:blue>//bufferevent_setcb ()//>
+                :<color:blue>//evtimer_new ()//>
+
+                partition "**function** connect_peer ()" { 
+                    :<color:blue>//bufferevent_enable()//>
+                    :<color:blue>//bufferevent_socket_connect ()//>
+                }
+
+            }
+        repeat while (//for all acceptors//)
+
+    }
+
+    partition "**function** peers_listen ()" {
+        :<color:blue>//evconnlistener_new_bind ()//>
+        note
+            Register //evconnlistener//.
+        end note
+        :<color:blue>//evconnlistener_set_error_cb ()//>
+        note
+            Register //callback//.
+        end note
+    }
+
+    partition "**function** evacceptor_init_internal ()" {
+        :<color:blue>//evtimer_new ()//>
+        note
+            New event init.
+        end note
+        :<color:blue>//event_add ()//>
+    }
+    repeat
+    :<color:blue>//event_base_dispatch ()//>
+    repeat while (<color:blue>//event_base_loopexit()//) is (No) not (Yes)
+    stop
+
+}
+
+@enduml

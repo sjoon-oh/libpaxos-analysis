@@ -1,0 +1,37 @@
+@startuml paxos_config
+
+' online plantuml server : https://www.plantuml.com/plantuml/uml/
+
+' Configuration
+struct paxos_config
+{ 
+    {field} verbosity : paxos_log_level
+    {field} tcp_nodelay : int
+    {field} learner_catch_up : int
+    {field} proposer_timeout : int
+    {field} proposer_preexec_window : int
+    {field} storage_backend : paxos_storage_backend
+    {field} trash_files : int
+    {field} lmdb_sync : int
+    {field} lmdb_env_path : char*
+    {field} lmdb_mapsize : size_t
+}
+
+enum paxos_log_level {
+    PAXOS_LOG_QUIET
+	PAXOS_LOG_ERROR
+	PAXOS_LOG_INFO
+	PAXOS_LOG_DEBUG
+}
+
+paxos_config *-- "verbosity" paxos_log_level
+
+enum paxos_storage_backend {
+	PAXOS_MEM_STORAGE
+	PAXOS_LMDB_STORAGE
+}
+
+paxos_config *-- "storage_backend" paxos_storage_backend
+
+@enduml
+

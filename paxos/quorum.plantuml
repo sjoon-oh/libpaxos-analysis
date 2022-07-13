@@ -1,0 +1,14 @@
+@startuml quorum
+
+' online plantuml server : https://www.plantuml.com/plantuml/uml/
+
+' struct quorum
+struct quorum {
+    {field} count : count
+    {field} quorum : quorum
+    {field} acceptors : acceptors
+    {field} acceptor_ids : int*
+}
+
+@enduml
+
