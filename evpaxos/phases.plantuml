@@ -2,8 +2,10 @@
 
 ?--> evproposer: evproposer_preexec_once ()
 
+collections evacceptor
+
 activate evproposer
-evproposer -> evproposer: proposer_preexecute () \nproposer_prepare ()
+evproposer -> evproposer: **proposer_preexecute ()** \nproposer_prepare ()
 
 activate evproposer
 
@@ -15,17 +17,18 @@ rnote over evproposer
         //preexec_window//.
 end note
 
-evproposer -> evacceptor: peer_send_prepare ()
-
-hnote over evproposer
-    for //preexec_window//
-end note
-
-
-deactivate evproposer
+'hnote over evproposer
+'    for //preexec_window//
+'end note
 deactivate evproposer
 
+evproposer -> evacceptor: peer_send_prepare () \nfor //preexec_window//
 activate evacceptor
+evproposer -> evacceptor
+evproposer -> evacceptor
+
+deactivate evproposer
+
 evacceptor -> evacceptor: **evacceptor_handle_prepare ()**\nacceptor_receive_prepare ()
 
 database "evacceptor \nstorage"
@@ -68,13 +71,29 @@ end note
 
 evproposer -> evacceptor: instance_to_accept () \npeer_send_accept ()
 
-evproposer -> evproposer: proposer_preexecute ()
+activate evacceptor
+evacceptor -> evacceptor: **evacceptor_handle_accept ()** \naccept_receive_accept ()
+activate evacceptor
+
+evproposer -> evproposer: **proposer_preexecute ()** \nprposer_prepare ()
+[<- evproposer: peer_send_prepare () \n...
+deactivate evproposer
+deactivate evproposer
 deactivate evproposer
 
+collections "(evacceptor)\nclients"
 
+alt #Lightblue preempt case
+    evacceptor -> "evacceptor \nstorage": storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
+    "evacceptor \nstorage" --> evacceptor: No error
 
+    evacceptor -> "(evacceptor)\nclients": paxos_accept_to_accepted ()\npeer_send_paxos_message ()
+else #Pink 
+    evacceptor -> evproposer: paxos_accepted_to_preempted () \nsend_paxos_message ()
+end
 
-
+deactivate evacceptor
+deactivate evacceptor
 
 
 @enduml
