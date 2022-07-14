@@ -1,0 +1,39 @@
+@startuml
+
+collections evlearner
+collections evacceptor
+
+evlearner -> evlearner ++: **evlearner_check_holes ()**
+evlearner -> evacceptor++: peer_send_repeat ()
+
+deactivate evlearner
+
+evacceptor -> evacceptor++: **evacceptor_handle_repeat ()** \nacceptor_receive_repeat ()
+
+database "evacceptor\nstorage"
+
+evacceptor -> "evacceptor\nstorage": storage_tx_begin () \nstorage_tx_commmit ()
+"evacceptor\nstorage" --> evacceptor: No error
+
+evacceptor -> evproposer++: send_paxos_accepted ()
+deactivate evacceptor
+deactivate evacceptor
+
+evproposer -> evproposer++: **evproposer_handle_accepted ()** \nproposer_receive_accepted ()
+
+rnote over evproposer
+    //proposer_receive_accepted//
+    ---
+    1. Wait for quorums to send //accepted//.
+    2. If all has ACKed, reset the instance 
+        record.
+end note
+
+evproposer -> evproposer: **try_accept ()** \nproposer_accept () \n...
+
+====
+
+
+evlearner -> evlearner ++: **evlearner_check_holes ()**
+
+@enduml
