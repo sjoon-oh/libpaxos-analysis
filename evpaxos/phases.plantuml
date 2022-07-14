@@ -54,19 +54,22 @@ rnote over evproposer
 
 end note
 
-alt #Lightblue preempt case
+alt #Pink preempt 
     evproposer -> evacceptor: peer_send_prepare ()
-else #Pink no preempt
+else #Lightblue no preempt
     evproposer ->x evacceptor: Nop
 end
 
-evproposer -> evproposer: try_accept () \nproposer_accept ()
+
+evproposer -> evproposer: **try_accept ()** \nproposer_accept ()
 activate evproposer
 
 rnote over evproposer
     //proposer_accept//
     ---
-    1. 
+    1. Wait for quorums to respond.
+    2. Move //prepare_instances// to 
+        //accept_instances//.
 end note
 
 evproposer -> evacceptor: instance_to_accept () \npeer_send_accept ()
@@ -76,24 +79,62 @@ evacceptor -> evacceptor: **evacceptor_handle_accept ()** \naccept_receive_accep
 activate evacceptor
 
 evproposer -> evproposer: **proposer_preexecute ()** \nprposer_prepare ()
-[<- evproposer: peer_send_prepare () \n...
 deactivate evproposer
+
+evproposer -> evacceptor: peer_send_prepare () \n...
 deactivate evproposer
 deactivate evproposer
 
-collections "(evacceptor)\nclients"
+alt #Pink preempt
+    evacceptor -> evproposer: paxos_accepted_to_preempted () \nsend_paxos_message ()
+    activate evproposer
 
-alt #Lightblue preempt case
+    evproposer -> evproposer: **evproposer_handle_preempted ()** \nproposer_receive_preempted ()
+
+    activate evproposer
+
+    rnote over evproposer
+        //proposer_receive_preempted//
+        ---
+        Check if "//ack->ballot > inst->ballot//"
+          If true, move //accept_instances// to 
+          //prepare_instances//, and run
+          //proposer_preempt// (Clear instance)
+    end note
+
+    alt preempt enabled
+    evproposer -> evacceptor: peer_send_prepare () \n...
+    evproposer -> evproposer: **try_accept ()** \nproposer_accept () \n...  
+    
+    deactivate evproposer
+    end
+
+    deactivate evproposer
+
+else #Lightblue no preempt
     evacceptor -> "evacceptor \nstorage": storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
     "evacceptor \nstorage" --> evacceptor: No error
 
-    evacceptor -> "(evacceptor)\nclients": paxos_accept_to_accepted ()\npeer_send_paxos_message ()
-else #Pink 
-    evacceptor -> evproposer: paxos_accepted_to_preempted () \nsend_paxos_message ()
+    evacceptor -> evproposer: paxos_accept_to_accepted ()\npeer_send_paxos_message ()
+    deactivate evacceptor
+    deactivate evacceptor
+    activate evproposer
+    
+
+    evproposer -> evproposer: **evproposer_handle_accepted ()** \nproposer_receive_accepted ()
+
+    activate evproposer
+
+
+    rnote over evproposer
+        //proposer_receive_accepted//
+        ---
+        1. Wait for quorums to send //accepted//.
+        2. If all has ACKed, reset the instance 
+            record.
+    end note
 end
 
-deactivate evacceptor
-deactivate evacceptor
-
+evproposer -> evproposer: **try_accept ()** \nproposer_accept () \n...
 
 @enduml
