@@ -1,5 +1,10 @@
 @startuml
 
+participant evproposer order 1
+collections evacceptor order 2
+collections evlearner order 3
+database "evacceptor \nstorage" order 4
+
 ?--> evproposer: evproposer_preexec_once ()
 
 collections evacceptor
@@ -31,7 +36,6 @@ deactivate evproposer
 
 evacceptor -> evacceptor: **evacceptor_handle_prepare ()**\nacceptor_receive_prepare ()
 
-database "evacceptor \nstorage"
 activate evacceptor
 evacceptor -> "evacceptor \nstorage": storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
 "evacceptor \nstorage" --> evacceptor: No error
@@ -115,16 +119,15 @@ else #Lightblue no preempt
     evacceptor -> "evacceptor \nstorage": storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
     "evacceptor \nstorage" --> evacceptor: No error
 
-    evacceptor -> evproposer: paxos_accept_to_accepted ()\npeer_send_paxos_message ()
+    evacceptor -> evacceptor: paxos_accept_to_accepted ()
+    evacceptor -> evproposer++: peer_send_paxos_message ()
+    evacceptor -> evlearner++: peer_send_paxos_message ()
+
     deactivate evacceptor
-    deactivate evacceptor
-    activate evproposer
-    
+    deactivate evacceptor    
 
-    evproposer -> evproposer: **evproposer_handle_accepted ()** \nproposer_receive_accepted ()
-
-    activate evproposer
-
+    evproposer -> evproposer++: **evproposer_handle_accepted ()** \nproposer_receive_accepted ()
+    evlearner -> evlearner++: **evlearner_handle_accepted ()** \nlearner_receive_accepted ()
 
     rnote over evproposer
         //proposer_receive_accepted//
@@ -133,7 +136,21 @@ else #Lightblue no preempt
         2. If all has ACKed, reset the instance 
             record.
     end note
-end
+
+    rnote over evlearner
+        //learner_receive_accepted//
+        ---
+        1. Create if given instance does not exist.
+        2. Update the instance with given //accept//
+            value.
+    end note
+
+    evlearner -> evlearner++: evlearner_deliver_next_closed () \n**l->delfun ()**
+end 
+
+deactivate evlearner
+deactivate evlearner
+deactivate evlearner
 
 evproposer -> evproposer: **try_accept ()** \nproposer_accept () \n...
 

@@ -1,45 +1,30 @@
 @startuml
 
-?--> evproposer: evproposer_preexec_once ()
+participant evproposer
+collections evacceptor
 
-activate evproposer
-evproposer -> evproposer: proposer_preexecute () \nproposer_prepare ()
+evacceptor -> evacceptor++: **send_acceptor_state ()** \nacceptor_set_current_state ()
+evacceptor -> evproposer++: peer_send_paxos_message ()
+deactivate evacceptor
 
-activate evproposer
-' evproposer -> evproposer: proposer_prepare ()
+evproposer -> evproposer++: **evproposer_handle_acceptor_state ()** \nproposer_receive_acceptor_state ()
 
 rnote over evproposer
-    //proposer_prepare//
+    //proposer_receive_acceptor_state//
     ---
-    1. Prepares //ballot//
-    2. Make new //prepare_instance// for
-       //preexec_window//
+    1. Compare //"p->max_trim_iid < state->trim_iid)"//
+    2. Remove instances older than given //iid// for,
+        - //prepare_instances//
+        - //accept_instances//
 end note
-
-evproposer ->(20) evacceptor: peer_send_prepare ()
-
-hnote over evproposer
-    for //preexec_window//
-end note
-
 
 deactivate evproposer
 deactivate evproposer
 
-activate evacceptor
-evacceptor -> evacceptor: evacceptor_handle_prepare ()\nacceptor_receive_prepare ()
 
-database storage
-activate evacceptor
-evacceptor -> storage: storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
-storage --> evacceptor: No error
-deactivate evacceptor
+evacceptor -> evacceptor++: **send_acceptor_state ()** \nacceptor_set_current_state ()
+evacceptor -> evproposer++: peer_send_paxos_message ()
 
-evacceptor ->(20) evproposer: paxos_accepted_to_promise () \nsend_paxos_message ()
-
-deactivate evacceptor
-activate evproposer
-
-newpage
+====
 
 @enduml

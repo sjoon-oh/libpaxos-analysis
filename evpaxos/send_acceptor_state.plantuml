@@ -1,0 +1,45 @@
+@startuml
+
+?--> evproposer: evproposer_preexec_once ()
+
+activate evproposer
+evproposer -> evproposer: proposer_preexecute () \nproposer_prepare ()
+
+activate evproposer
+' evproposer -> evproposer: proposer_prepare ()
+
+rnote over evproposer
+    //proposer_prepare//
+    ---
+    1. Prepares //ballot//
+    2. Make new //prepare_instance// for
+       //preexec_window//
+end note
+
+evproposer ->(20) evacceptor: peer_send_prepare ()
+
+hnote over evproposer
+    for //preexec_window//
+end note
+
+
+deactivate evproposer
+deactivate evproposer
+
+activate evacceptor
+evacceptor -> evacceptor: evacceptor_handle_prepare ()\nacceptor_receive_prepare ()
+
+database storage
+activate evacceptor
+evacceptor -> storage: storage_tx_begin () \nstorage_put_record ()\nstorage_tx_commit ()
+storage --> evacceptor: No error
+deactivate evacceptor
+
+evacceptor ->(20) evproposer: paxos_accepted_to_promise () \nsend_paxos_message ()
+
+deactivate evacceptor
+activate evproposer
+
+newpage
+
+@enduml
